@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QLD MP Watch — attendance, voting & political donations</title>
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <style>
+    :root{
+      --bg:#f4f6f3;--panel:#fff;--ink:#152019;--muted:#68756d;--line:#dce3de;
+      --green:#124c35;--green2:#1f7452;--lime:#d9ef63;--blue:#396c9f;--amber:#b97628;--red:#a84747;
+      --shadow:0 14px 42px rgba(20,40,29,.10);--radius:22px
+    }
+    *{box-sizing:border-box}html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg)}
+    button,input,select{font:inherit}button{cursor:pointer}.app{min-height:100%;display:grid;grid-template-rows:auto auto 1fr}
+    header{height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:#0e3828;color:white;border-bottom:1px solid rgba(255,255,255,.09);z-index:1000}
+    .brand{display:flex;gap:12px;align-items:center}.mark{width:35px;height:35px;border-radius:12px;background:var(--lime);display:grid;place-items:center;color:#0e3828;font-weight:900;box-shadow:inset 0 -5px 12px rgba(0,0,0,.08)}
+    .brand strong{font-size:17px;letter-spacing:-.02em}.brand small{display:block;color:#c9d8d0;font-size:11px;margin-top:2px}.top-actions{display:flex;gap:10px;align-items:center}.badge{font-size:12px;padding:7px 10px;border:1px solid rgba(255,255,255,.18);border-radius:999px;color:#e7f0eb;background:rgba(255,255,255,.07)}
+    .ghost{border:1px solid rgba(255,255,255,.18);background:transparent;color:white;border-radius:11px;padding:9px 12px}.toolbar{display:flex;gap:12px;padding:14px 20px;background:rgba(244,246,243,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);z-index:900;align-items:center;flex-wrap:wrap}
+    .search{min-width:280px;flex:1;max-width:500px;position:relative}.search input{width:100%;height:44px;border:1px solid var(--line);background:white;border-radius:13px;padding:0 42px 0 14px;outline:none;box-shadow:0 3px 10px rgba(0,0,0,.025)}.search span{position:absolute;right:14px;top:11px;color:#7d8982}
+    .segmented{display:flex;padding:4px;background:#e7ebe8;border-radius:13px}.segmented button{border:0;background:transparent;padding:8px 12px;border-radius:9px;color:#59665e;font-weight:700;font-size:13px}.segmented button.active{background:white;color:var(--green);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+    select{height:42px;border:1px solid var(--line);border-radius:11px;background:white;padding:0 34px 0 11px;color:#334038}main{display:grid;grid-template-columns:minmax(0,1fr) 420px;min-height:0;position:relative}.map-wrap{position:relative;min-height:680px}.map{position:absolute;inset:0;z-index:1;background:#dfe9e3}
+    .map-error{position:absolute;z-index:500;left:20px;bottom:20px;max-width:430px;background:white;border:1px solid var(--line);border-radius:15px;padding:13px 15px;box-shadow:var(--shadow);font-size:13px;display:none}.legend{position:absolute;z-index:500;left:20px;top:20px;background:rgba(255,255,255,.96);padding:13px;border-radius:14px;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.04);width:220px}.legend-title{font-size:12px;font-weight:800;margin-bottom:9px}.gradient{height:9px;border-radius:999px;background:linear-gradient(90deg,#dfe8e2,#9dcab4,#287454,#123f2e)}.ticks{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;margin-top:5px}
+    .panel{background:#f8faf8;border-left:1px solid var(--line);overflow:auto;padding:18px;z-index:10}.card{background:white;border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 3px 12px rgba(0,0,0,.025)}.member-head{display:flex;gap:13px;align-items:flex-start}.avatar{width:52px;height:52px;border-radius:16px;background:#e6ece8;display:grid;place-items:center;font-weight:850;color:var(--green);font-size:18px}.member-head h2{font-size:19px;margin:1px 0 3px;letter-spacing:-.02em}.sub{font-size:12px;color:var(--muted)}
+    .party{margin-left:auto;padding:6px 9px;border-radius:999px;font-size:11px;font-weight:800;background:#eef2ef;color:#425048}.party.lnp{background:#dfeaf7;color:#225383}.party.alp{background:#f6dedf;color:#8b353a}.party.grn{background:#e4f1df;color:#376d2f}.party.kap{background:#f6e9d7;color:#8a5724}.party.ind{background:#e8e8e8;color:#555}
+    .hero-stat{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:17px}.stat-block{min-width:0}.stat-label{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.05em}.stat-num{font-size:23px;font-weight:850;letter-spacing:-.045em;margin-top:3px;white-space:nowrap}.stat-note{font-size:10px;color:var(--muted);line-height:1.35}.bar{height:7px;border-radius:99px;background:#edf1ee;overflow:hidden;margin-top:7px}.bar>i{display:block;height:100%;background:var(--green2);border-radius:99px}
+    .section-title{display:flex;justify-content:space-between;align-items:end;margin-bottom:12px;gap:10px}.section-title h3{margin:0;font-size:14px}.section-title span{font-size:11px;color:var(--muted);text-align:right}.record{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:11px 0;border-top:1px solid #edf0ee}.record:first-of-type{border-top:0}.record strong{font-size:13px}.record .amt{font-weight:850}.record small{color:var(--muted);font-size:11px;line-height:1.4}.record .question{grid-column:1/-1;color:#37443c;font-size:12px;line-height:1.4}.choice{font-size:10px;font-weight:900;padding:5px 7px;border-radius:999px;align-self:start}.choice.aye{background:#dff0e6;color:#21633f}.choice.no{background:#f5dddd;color:#8c3434}.choice.pair{background:#f3ead6;color:#76511f}.choice.missing{background:#eef0ef;color:#647069}
+    .mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mini{border:1px solid var(--line);border-radius:13px;padding:12px}.mini b{font-size:18px}.mini small{display:block;color:var(--muted);margin-top:3px}.tabs{display:flex;border-bottom:1px solid var(--line);margin:-2px -4px 14px;overflow-x:auto}.tabs button{border:0;background:none;padding:10px 10px;color:var(--muted);font-weight:750;font-size:12px;border-bottom:2px solid transparent;white-space:nowrap}.tabs button.active{color:var(--green);border-color:var(--green)}
+    .data-note{font-size:11px;line-height:1.5;color:#5f6c64;background:#f1f4f1;border-radius:12px;padding:11px 12px}.warning{background:#faf3e5;color:#705526}.link{color:var(--green);font-weight:750;text-decoration:none}.empty{padding:28px 12px;text-align:center;color:var(--muted)}.leaflet-control-zoom a{color:var(--green)!important}.leaflet-popup-content-wrapper{border-radius:14px}
+    @media(max-width:980px){main{grid-template-columns:1fr}.map-wrap{height:58vh;min-height:480px}.panel{border-left:0;border-top:1px solid var(--line)}.top-actions .badge{display:none}}@media(max-width:600px){header{padding:0 14px}.toolbar{padding:10px}.search{min-width:100%}.panel{padding:12px}.legend{width:185px;left:12px;top:12px}.brand small{display:none}.hero-stat{grid-template-columns:1fr 1fr}.hero-stat .stat-block:last-child{grid-column:1/-1}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><div class="mark">Q</div><div><strong>QLD MP Watch</strong><small>Attendance + voting + political funding transparency</small></div></div>
+    <div class="top-actions"><span class="badge">Loading official-source coverage…</span><button class="ghost" onclick="document.getElementById('about').scrollIntoView({behavior:'smooth'})">Data sources</button></div>
+  </header>
+  <div class="toolbar">
+    <div class="search"><input id="search" placeholder="Search member or electorate…"><span>⌕</span></div>
+    <div class="segmented"><button id="btnAttendance" class="active">Attendance</button><button id="btnVoting">Voting</button><button id="btnDonations">Donations</button></div>
+    <select id="partyFilter"><option value="all">All parties</option><option>LNP</option><option>Labor</option><option>Greens</option><option>KAP</option><option>Independent</option></select>
+    <select id="periodFilter"><option>58th Parliament</option><option>2026</option><option>2025</option></select>
+  </div>
+  <main>
+    <section class="map-wrap">
+      <div id="map" class="map"></div>
+      <div class="legend"><div class="legend-title" id="legendTitle">Attendance rate</div><div class="gradient" id="gradient"></div><div class="ticks"><span id="tick1">75%</span><span id="tick2">85%</span><span id="tick3">95%+</span></div></div>
+      <div class="map-error" id="mapError"></div>
+    </section>
+    <aside class="panel">
+      <div class="card">
+        <div class="member-head">
+          <div class="avatar" id="avatar">—</div>
+          <div><h2 id="memberName">Loading member data…</h2><div class="sub"><span id="electorateName">—</span> • Queensland Legislative Assembly</div></div>
+          <span class="party" id="partyBadge">—</span>
+        </div>
+        <div class="hero-stat">
+          <div class="stat-block"><div class="stat-label">Sitting attendance</div><div class="stat-num" id="attendanceNum">—</div><div class="bar"><i id="attendanceBar" style="width:0%"></i></div><div class="stat-note" id="attendanceNote">not scraped yet</div></div>
+          <div class="stat-block"><div class="stat-label">Voting participation</div><div class="stat-num" id="votingNum">—</div><div class="bar"><i id="votingBar" style="width:0%"></i></div><div class="stat-note" id="votingNote">not scraped yet</div></div>
+          <div class="stat-block"><div class="stat-label">Disclosed gifts</div><div class="stat-num" id="donationNum">—</div><div class="stat-note" id="donationNote">not imported yet</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="tabs"><button id="tabOverview" class="active">Overview</button><button id="tabAttendance">Attendance</button><button id="tabVoting">Voting</button><button id="tabFunding">Funding</button></div>
+        <div id="tabContent"><div class="empty">Loading…</div></div>
+      </div>
+      <div class="card" id="about">
+        <div class="section-title"><h3>How the numbers are built</h3><span>evidence-first</span></div>
+        <div class="data-note">Members come from Queensland Parliament. Sitting attendance comes from the official Record of Proceedings <b>ATTENDANCE</b> list. A recorded Aye/No vote can additionally confirm presence at that division, but a missed vote is never treated as proof of absence. Pairs are shown separately. Political gifts come from ECQ public disclosures and party-wide gifts are not allocated to individual MPs. Electorate polygons come from Queensland Government spatial data.</div>
+      </div>
+    </aside>
+  </main>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+const API='/api';let members=[],membersByElectorate=new Map(),geoLayer=null,selectedLayer=null,current=null,currentTab='overview',mode='attendance';
+const map=L.map('map',{zoomControl:true,minZoom:4,maxZoom:12}).setView([-22.5,145.5],5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
+
+function partyClass(p){return p==='LNP'?'lnp':p==='Labor'?'alp':p==='Greens'?'grn':p==='KAP'?'kap':'ind'}
+function initials(n){return (n||'?').split(' ').filter(Boolean).map(x=>x[0]).slice(0,2).join('')}
+function money(v){if(v===null||v===undefined)return '—';v=Number(v||0);if(v>=1000000)return '$'+(v/1e6).toFixed(1)+'m';if(v>=1000)return '$'+(v/1000).toFixed(1)+'k';return '$'+v.toLocaleString()}
+function periodParams(){const p=new URLSearchParams();const v=document.getElementById('periodFilter').value;if(v==='2026'){p.set('from','2026-01-01');p.set('to','2026-12-31')}else if(v==='2025'){p.set('from','2025-01-01');p.set('to','2025-12-31')}else p.set('from','2024-11-26');return p}
+function pathWithParams(path,extra={}){const p=periodParams();Object.entries(extra).forEach(([k,v])=>p.set(k,v));return `${path}?${p.toString()}`}
+function metricFor(name){const m=membersByElectorate.get((name||'').toLowerCase());if(!m)return null;if(mode==='attendance')return m.attendance_rate;if(mode==='voting')return m.voting_participation_rate;return m.donations_total}
+function colorFor(v){if(v===null||v===undefined)return '#dfe4e0';if(mode==='attendance'||mode==='voting')return v>=95?'#123f2e':v>=90?'#287454':v>=80?'#70aa8e':v>=65?'#afd0bf':'#dfe8e2';return v>=120000?'#5d2a13':v>=80000?'#a45f25':v>=40000?'#d69a43':v>=20000?'#eccd8b':'#f4ead5'}
+function featureName(feature){return feature.properties.adminareaname||feature.properties.ADMINAREANAME||''}
+function style(feature){const name=featureName(feature),m=membersByElectorate.get(name.toLowerCase());const filter=document.getElementById('partyFilter').value;const visible=!m||filter==='all'||m.party===filter;return{color:'#fff',weight:1.2,fillColor:colorFor(metricFor(name)),fillOpacity:visible?.78:.12,opacity:visible?1:.3}}
+async function api(path){const r=await fetch(path);if(!r.ok)throw new Error(`${r.status} ${await r.text()}`);return r.json()}
+function pct(v){return v==null?'—':Number(v).toFixed(1)+'%'}
+function choiceLabel(c){if(c==='aye')return '<span class="choice aye">AYE</span>';if(c==='no')return '<span class="choice no">NO</span>';if(c==='pair')return '<span class="choice pair">PAIRED</span>';return '<span class="choice missing">NO VOTE RECORDED</span>'}
+function safe(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+function renderMember(m){
+  current=m;if(!m){document.getElementById('memberName').textContent='No member data';return}
+  document.getElementById('memberName').textContent=m.name;document.getElementById('electorateName').textContent=m.electorate;document.getElementById('avatar').textContent=initials(m.name);
+  const pb=document.getElementById('partyBadge');pb.textContent=m.party;pb.className='party '+partyClass(m.party);
+  document.getElementById('attendanceNum').textContent=pct(m.attendance_rate);document.getElementById('attendanceBar').style.width=(m.attendance_rate||0)+'%';document.getElementById('attendanceNote').textContent=m.total_sitting_days?`${m.present_sitting_days} of ${m.total_sitting_days} verified sitting days`:'attendance not scraped yet';
+  document.getElementById('votingNum').textContent=pct(m.voting_participation_rate);document.getElementById('votingBar').style.width=(m.voting_participation_rate||0)+'%';document.getElementById('votingNote').textContent=m.total_divisions?`${m.ballots_cast} of ${m.total_divisions} recorded divisions`:'division votes not scraped yet';
+  document.getElementById('donationNum').textContent=m.donations_count?money(m.donations_total):'—';document.getElementById('donationNote').textContent=m.donations_count?`${m.donations_count} directly matched ECQ disclosures`:'no matched ECQ data imported yet';renderTab(currentTab)
+}
+
+async function renderTab(tab){
+  currentTab=tab;document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));document.getElementById(tab==='overview'?'tabOverview':tab==='attendance'?'tabAttendance':tab==='voting'?'tabVoting':'tabFunding').classList.add('active');const c=document.getElementById('tabContent');if(!current){c.innerHTML='<div class="empty">Select an electorate.</div>';return}
+  if(tab==='overview'){
+    c.innerHTML=`<div class="section-title"><h3>Member snapshot</h3><span>${safe(current.electorate)}</span></div><div class="mini-grid"><div class="mini"><b>${pct(current.attendance_rate)}</b><small>Verified sitting attendance</small></div><div class="mini"><b>${pct(current.voting_participation_rate)}</b><small>Recorded division participation</small></div><div class="mini"><b>${current.ballots_cast||0}</b><small>Aye/No ballots cast</small></div><div class="mini"><b>${current.paired_divisions||0}</b><small>Pair records</small></div><div class="mini"><b>${current.donations_count?money(current.donations_total):'—'}</b><small>Directly attributable gifts</small></div><div class="mini"><b>${current.vote_confirmed_corrections||0}</b><small>Attendance days confirmed by vote evidence</small></div></div>`;return
+  }
+  c.innerHTML='<div class="empty">Loading official records…</div>';
+  try{
+    if(tab==='attendance'){
+      const data=await api(pathWithParams(`${API}/members/${current.id}/attendance`));const rows=data.days.slice().reverse().slice(0,40).map(d=>{const label=d.status==='present'?'Present':d.status==='present_vote_confirmed'?'Present • vote-confirmed':'Not listed';return `<div class="record"><strong>${safe(d.date)}</strong><span class="amt">${label}</span><small>${d.voted_in_division?'Recorded Aye/No division evidence':'Official attendance-list evidence'}</small><small><a class="link" href="${safe(d.evidence_url)}" target="_blank" rel="noopener">Hansard ↗</a></small></div>`}).join('');c.innerHTML=`<div class="section-title"><h3>Sitting attendance</h3><span>${data.total_sitting_days} verified sitting days</span></div><div class="mini-grid"><div class="mini"><b>${data.present_sitting_days}</b><small>Presence confirmed</small></div><div class="mini"><b>${pct(data.attendance_rate)}</b><small>Attendance rate</small></div><div class="mini"><b>${data.official_listed_days}</b><small>Official ATTENDANCE-list days</small></div><div class="mini"><b>${data.vote_confirmed_corrections}</b><small>Vote-confirmed corrections</small></div></div><div class="data-note" style="margin-top:12px">${safe(data.coverage_note)}</div>${data.additional_vote_confirmed_days.length?`<div class="data-note warning" style="margin-top:8px">There are ${data.additional_vote_confirmed_days.length} additional days where an Aye/No proves presence but a valid attendance-list denominator is unavailable. These days are not used to manufacture an absence rate.</div>`:''}<div style="margin-top:10px">${rows||'<div class="empty">No attendance records have been scraped yet.</div>'}</div>`
+    }else if(tab==='voting'){
+      const data=await api(pathWithParams(`${API}/members/${current.id}/votes`,{limit:60}));const rows=data.divisions.map(d=>`<div class="record"><strong>${safe(d.context||'Recorded division')}</strong>${choiceLabel(d.choice)}<small>${safe(d.date)} • Ayes ${d.ayes_count} / Noes ${d.noes_count}${d.result?' • '+safe(d.result):''}</small><small><a class="link" href="${safe(d.evidence_url)}" target="_blank" rel="noopener">Hansard ↗</a></small><div class="question">${safe(d.question)}</div></div>`).join('');c.innerHTML=`<div class="section-title"><h3>Division voting</h3><span>${data.total_divisions} recorded divisions</span></div><div class="mini-grid"><div class="mini"><b>${pct(data.participation_rate)}</b><small>Voting participation</small></div><div class="mini"><b>${data.ballots_cast}</b><small>Aye/No ballots cast</small></div><div class="mini"><b>${data.ayes}</b><small>Aye votes</small></div><div class="mini"><b>${data.noes}</b><small>No votes</small></div><div class="mini"><b>${data.paired}</b><small>Pair records</small></div><div class="mini"><b>${data.vote_confirmed_sitting_days}</b><small>Sitting days with vote-confirmed presence</small></div></div><div class="data-note warning" style="margin-top:12px">${safe(data.participation_note)}</div><div style="margin-top:10px">${rows||'<div class="empty">No divisions have been scraped for this period yet.</div>'}</div>`
+    }else{
+      const data=await api(pathWithParams(`${API}/members/${current.id}/donations`,{limit:50}));const rows=data.gifts.map(g=>`<div class="record"><strong>${safe(g.donor||'Unnamed donor')}</strong><span class="amt">${money(g.value)}</span><small>${safe(g.date||'Date unavailable')} • ${safe(g.political_donation||'classification unavailable')}${g.reconciliation_status?' • '+safe(g.reconciliation_status):''}</small><small>${g.source_url?`<a class="link" href="${safe(g.source_url)}" target="_blank" rel="noopener">ECQ source ↗</a>`:''}</small></div>`).join('');c.innerHTML=`<div class="section-title"><h3>Political funding</h3><span>${data.count} matched disclosures</span></div><div class="mini-grid"><div class="mini"><b>${money(data.total)}</b><small>Total matched gifts</small></div><div class="mini"><b>${money(data.reconciled_total)}</b><small>Reconciled subtotal</small></div></div><div class="data-note" style="margin-top:12px">${safe(data.attribution_note)}</div><div style="margin-top:10px">${rows||'<div class="empty">No member-attributable ECQ gifts found for this period.</div>'}</div>`
+    }
+  }catch(err){c.innerHTML=`<div class="data-note warning">Could not load this section: ${safe(err.message||err)}</div>`}
+}
+
+function onFeature(feature,layer){const name=featureName(feature);layer.bindTooltip(name,{sticky:true});layer.on({click:()=>{if(selectedLayer)selectedLayer.setStyle(style(selectedLayer.feature));selectedLayer=layer;layer.setStyle({weight:3,color:'#102f23',fillOpacity:.94,opacity:1});renderMember(membersByElectorate.get(name.toLowerCase())||null);map.fitBounds(layer.getBounds(),{padding:[40,40],maxZoom:9})}})}
+async function loadMembers(){members=await api(pathWithParams(`${API}/members`));membersByElectorate=new Map(members.map(m=>[m.electorate.toLowerCase(),m]));if(geoLayer)geoLayer.setStyle(style);const first=membersByElectorate.get('broadwater')||members[0];if(first)renderMember(first)}
+async function loadMap(){try{let data;try{data=await api(`${API}/electorates/geojson`)}catch(apiErr){const u='https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Boundaries/AdministrativeBoundaries/MapServer/5/query?where=1%3D1&outFields=adminareaname%2Cid&outSR=4326&returnGeometry=true&f=geojson';const r=await fetch(u);if(!r.ok)throw apiErr;data=await r.json()}geoLayer=L.geoJSON(data,{style,onEachFeature:onFeature}).addTo(map);map.fitBounds(geoLayer.getBounds(),{padding:[12,12]})}catch(err){const e=document.getElementById('mapError');e.style.display='block';e.innerHTML='<strong>Could not load Queensland electorate boundaries.</strong><br>'+safe(err.message)}}
+async function loadMeta(){try{const m=await api(`${API}/meta`);document.querySelector('.badge').textContent=`Attendance ${m.latest_attendance_date||'not scraped'} • votes ${m.latest_division_date||'not scraped'} • ECQ ${m.latest_gift_date||'not imported'}`}catch(_){}}
+function setMode(next){mode=next;['Attendance','Voting','Donations'].forEach(x=>document.getElementById('btn'+x).classList.toggle('active',mode===x.toLowerCase()));const title=mode==='attendance'?'Attendance rate':mode==='voting'?'Division participation':'Directly matched gift total';document.getElementById('legendTitle').textContent=title;document.getElementById('gradient').style.background=mode==='donations'?'linear-gradient(90deg,#f4ead5,#eccd8b,#a45f25,#5d2a13)':'linear-gradient(90deg,#dfe8e2,#9dcab4,#287454,#123f2e)';document.getElementById('tick1').textContent=mode==='donations'?'$0':'65%';document.getElementById('tick2').textContent=mode==='donations'?'$60k':'80%';document.getElementById('tick3').textContent=mode==='donations'?'$120k+':'95%+';if(geoLayer)geoLayer.setStyle(style)}
+
+document.getElementById('btnAttendance').onclick=()=>setMode('attendance');document.getElementById('btnVoting').onclick=()=>setMode('voting');document.getElementById('btnDonations').onclick=()=>setMode('donations');document.getElementById('tabOverview').onclick=()=>renderTab('overview');document.getElementById('tabAttendance').onclick=()=>renderTab('attendance');document.getElementById('tabVoting').onclick=()=>renderTab('voting');document.getElementById('tabFunding').onclick=()=>renderTab('funding');document.getElementById('partyFilter').onchange=()=>{if(geoLayer)geoLayer.setStyle(style)};document.getElementById('periodFilter').onchange=async()=>{const old=current?.electorate;await loadMembers();await loadMeta();if(old){current=membersByElectorate.get(old.toLowerCase())||current;renderMember(current)}};document.getElementById('search').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();if(!q||!geoLayer)return;let match=null;geoLayer.eachLayer(l=>{const n=featureName(l.feature).toLowerCase(),m=membersByElectorate.get(n);if(!match&&(n.includes(q)||(m&&m.name.toLowerCase().includes(q))))match=l});if(match)match.fire('click')});
+Promise.all([loadMembers(),loadMap(),loadMeta()]).catch(err=>console.error(err));
+</script>
+</body>
+</html>
