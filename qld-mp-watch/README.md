@@ -324,7 +324,21 @@ Gift: $20,000
 
 is **not** automatically shown as a $20,000 donation to every LNP MP.
 
-Only disclosures that can be matched to the relevant member, candidate or electorate are attributed to an MP in the member-level view. Party-wide gifts remain unassigned at MP level.
+Only disclosures that can be matched to the relevant member, candidate or electorate are attributed to an MP in the member-level view. Party-wide gifts remain unassigned at MP level. The Funding tab now reports them separately as **party-wide funding context**, alongside the direct/candidate-linked total. It also groups disclosures by donor so users can see who funded the party, the donor's aggregate amount, and the number of disclosures.
+
+For a party-affiliated MP the interface therefore shows two different figures:
+
+```text
+Direct / candidate-linked gifts
+$12,500
+4 disclosures
+
+Party-wide funding context
+$2.84 million
+312 disclosures
+```
+
+The second figure is **not money personally received by the MP**. It is the total value of ECQ disclosures whose recipient is that MP's registered political party for the selected period. Independent MPs do not receive a party-wide total.
 
 ECQ disclosures should be presented as disclosed information, not described by this application as an independent audit of the donor or recipient.
 
@@ -478,6 +492,8 @@ total_divisions
 paired_divisions
 donations_total
 donations_count
+party_funding_total
+party_funding_count
 ```
 
 ## Attendance
@@ -498,12 +514,23 @@ GET /api/divisions
 GET /api/divisions?from=2026-01-01&to=2026-12-31&limit=100
 ```
 
-## Donations
+## Political funding
+
+Direct/candidate-linked disclosures:
 
 ```text
 GET /api/members/{member_id}/donations
 GET /api/members/{member_id}/donations?from=2026-01-01&to=2026-12-31&limit=100
 ```
+
+Party-wide disclosures and donor aggregation:
+
+```text
+GET /api/parties/LNP/funding
+GET /api/parties/Labor/funding?from=2026-01-01&to=2026-12-31&limit=50&donor_limit=20
+```
+
+The party endpoint returns the party total, disclosure count, distinct donor count, top donors grouped by total value, and recent individual ECQ disclosures.
 
 ## Map
 
@@ -729,7 +756,11 @@ A pair is not presented as a cast vote and is not treated as evidence of physica
 
 ### Donations should not be over-attributed
 
-A gift to a political party should not automatically be represented as a gift to every MP in that party. Member-level totals in this project are intentionally conservative.
+A gift to a political party should not automatically be represented as a gift to every MP in that party. Member-level totals in this project are intentionally conservative. Party-wide totals are shown as contextual information only and are explicitly labelled as **not personal to the MP**.
+
+### Donor totals are aggregated from disclosure rows
+
+The Funding tab groups party disclosures by the disclosed donor name and sums their gift values for the selected period. This helps answer “who is the funding coming from?” without changing the underlying ECQ records. The recent-disclosure list remains available beneath the grouped donor totals for traceability.
 
 ### Keep the source evidence
 
@@ -767,7 +798,8 @@ This README describes the QLD MP Watch build with:
 - vote-confirmed attendance;
 - recorded Aye/No/Pair division history;
 - voting participation;
-- ECQ gifts; and
+- ECQ direct/candidate-linked gifts;
+- party-wide ECQ funding and donor aggregation; and
 - Queensland electorate mapping.
 
-API version in this build: **0.3.0**.
+API version in this build: **0.4.0**.

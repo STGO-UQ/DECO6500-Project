@@ -23,4 +23,4 @@ BOUNDARY_URL = (
     "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/"
     "Boundaries/AdministrativeBoundaries/MapServer/5/query"
 )
-USER_AGENT = "QLD-MP-Watch/0.3 (+public-interest transparency project; respectful request rate)"
+USER_AGENT = "QLD-MP-Watch/0.4 (+public-interest transparency project; respectful request rate)"

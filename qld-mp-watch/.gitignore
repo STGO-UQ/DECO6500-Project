@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+data/qld_mp_watch.sqlite3
+data/electorates.geojson
+.pytest_cache/
+data/hansard_cache/
