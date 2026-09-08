@@ -1,0 +1,24 @@
+QLD MP Watch — Party Funding Patch v0.4
+========================================
+
+This patch is designed for your EXISTING qld-mp-watch folder so your populated
+SQLite database (including the 23,071 ECQ gifts you already imported) is kept.
+
+1. Stop the running server (Ctrl+C in its terminal).
+2. Open this patch ZIP.
+3. Copy/extract ALL files in the ZIP into your existing qld-mp-watch folder.
+4. When Windows asks whether to replace files, choose Replace the files in the destination.
+5. DO NOT delete or replace your existing data/qld_mp_watch.sqlite3 file.
+   This patch deliberately contains no data folder.
+6. Start the site again with start_windows.bat.
+7. Open http://127.0.0.1:8000 and press Ctrl+F5.
+
+What changes:
+- Funding map can switch between Direct gifts and Party funding.
+- Member Funding tab separates direct/candidate-linked gifts from party-wide funding.
+- Party funding shows top donors grouped by total disclosed amount and disclosure count.
+- Recent direct and party disclosure rows are both shown.
+- Party-wide figures are explicitly labelled as context and NOT personal to the MP.
+- New API endpoint: GET /api/parties/{party}/funding
+
+No new pip packages or database migration are required.

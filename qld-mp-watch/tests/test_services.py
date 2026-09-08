@@ -50,5 +50,67 @@ class ServiceTests(unittest.TestCase):
             self.assertEqual(voting["participation_rate"], 0.0)
 
 
+
+class FundingServiceTests(unittest.TestCase):
+    def setUp(self):
+        engine = create_engine("sqlite:///:memory:")
+        Base.metadata.create_all(engine)
+        self.Session = sessionmaker(bind=engine)
+
+    def test_party_funding_is_separate_from_direct_member_gifts_and_groups_donors(self):
+        from app.models import Donation
+        from app.services import donation_summary, party_funding_summary, party_funding_totals
+
+        with self.Session() as db:
+            member = Member(
+                full_name="Example Labor MP",
+                electorate="Example",
+                party="Labor",
+                term_start=date(2024, 11, 26),
+                attendance_alias="Example",
+            )
+            db.add(member); db.flush()
+            db.add_all([
+                Donation(source_key="direct", donor="Local Donor", recipient="Example Labor MP", gift_date=date(2026, 1, 10), amount=2500, member_id=member.id),
+                Donation(source_key="p1", donor="Company A", recipient="Australian Labor Party (State of Queensland)", gift_date=date(2026, 1, 11), amount=10000),
+                Donation(source_key="p2", donor="Company A", recipient="Australian Labor Party (State of Queensland)", gift_date=date(2026, 2, 11), amount=5000),
+                Donation(source_key="p3", donor="Company B", recipient="Australian Labor Party (State of Queensland)", gift_date=date(2026, 3, 11), amount=3000),
+            ])
+            db.commit()
+
+            direct = donation_summary(db, member.id, date(2026, 1, 1), date(2026, 12, 31))
+            party = party_funding_summary(db, "Labor", date(2026, 1, 1), date(2026, 12, 31))
+            totals = party_funding_totals(db, date(2026, 1, 1), date(2026, 12, 31))
+
+            self.assertEqual(direct["total"], 2500)
+            self.assertEqual(direct["count"], 1)
+            self.assertEqual(party["total"], 18000)
+            self.assertEqual(party["count"], 3)
+            self.assertEqual(party["donor_count"], 2)
+            self.assertEqual(party["donors"][0]["donor"], "Company A")
+            self.assertEqual(party["donors"][0]["total"], 15000)
+            self.assertEqual(totals["Labor"]["total"], 18000)
+
+    def test_known_ecq_party_recipient_names_are_classified(self):
+        from app.models import Donation
+        from app.services import party_funding_totals
+
+        with self.Session() as db:
+            rows = [
+                ("lnp", "PEXA Group Limited", "Liberal National Party of Queensland", 8307),
+                ("lab", "Braidwood farm Pty Ltd", "Australian Labor Party (State of Queensland)", 2500),
+                ("grn", "ELEANOR KATE FORREST", "Queensland Greens", 2000),
+                ("kap", "Australian Country Choice Production Pty Ltd", "Katter's Australian Party (KAP)", 3500),
+            ]
+            for key, donor, recipient, amount in rows:
+                db.add(Donation(source_key=key, donor=donor, recipient=recipient, gift_date=date(2026, 8, 24), amount=amount))
+            db.commit()
+            totals = party_funding_totals(db, date(2026, 1, 1), date(2026, 12, 31))
+            self.assertEqual(totals["LNP"]["total"], 8307)
+            self.assertEqual(totals["Labor"]["total"], 2500)
+            self.assertEqual(totals["Greens"]["total"], 2000)
+            self.assertEqual(totals["KAP"]["total"], 3500)
+
+
 if __name__ == "__main__":
     unittest.main()

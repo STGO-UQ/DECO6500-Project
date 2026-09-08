@@ -12,14 +12,21 @@ from sqlalchemy.orm import Session
 from .config import ADMIN_TOKEN, ROOT
 from .db import SessionLocal, get_db, init_db
 from .models import Division, DivisionVote, Donation, Member, SittingDay
-from .services import attendance_summary, division_summary, donation_summary, member_card
+from .services import (
+    attendance_summary,
+    division_summary,
+    donation_summary,
+    member_card,
+    party_funding_summary,
+    party_funding_totals,
+)
 from .scrapers.boundaries import fetch_boundaries
 from .scrapers.members import load_bootstrap, upsert_members
 
 app = FastAPI(
     title="QLD MP Watch API",
-    version="0.3.0",
-    description="Queensland state MP sitting attendance, division voting and ECQ donation transparency API",
+    version="0.4.0",
+    description="Queensland state MP sitting attendance, division voting, direct gifts and party-wide ECQ funding transparency API",
 )
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST"], allow_headers=["*"])
 
@@ -67,8 +74,8 @@ def meta(db: Session = Depends(get_db)):
             "Pairs are reported separately."
         ),
         "donation_method": (
-            "ECQ public disclosure export; only member/candidate/electorate-matched gifts are attributed to an MP. "
-            "Party-wide gifts are not apportioned."
+            "ECQ public disclosure export. Member/candidate/electorate-matched gifts are reported as direct funding; "
+            "party-recipient disclosures are reported separately as party-wide funding and are never apportioned to an MP."
         ),
         "ecq_caveat": "ECQ states EDS data appears as uploaded by users and may not be verified or validated before publication.",
     }
@@ -89,7 +96,8 @@ def members(
     if q:
         needle = q.casefold()
         rows = [m for m in rows if needle in m.full_name.casefold() or needle in m.electorate.casefold()]
-    return [member_card(db, m, from_, to) for m in rows]
+    party_context = party_funding_totals(db, from_, to)
+    return [member_card(db, m, from_, to, party_context=party_context) for m in rows]
 
 
 @app.get("/api/members/{member_id}")
@@ -173,6 +181,18 @@ def member_donations(
     if not db.get(Member, member_id):
         raise HTTPException(404, "Member not found")
     return donation_summary(db, member_id, from_, to, limit)
+
+
+@app.get("/api/parties/{party}/funding")
+def party_funding(
+    party: str,
+    from_: date | None = Query(None, alias="from"),
+    to: date | None = None,
+    limit: int = Query(50, ge=1, le=1000),
+    donor_limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    return party_funding_summary(db, party, from_, to, limit=limit, donor_limit=donor_limit)
 
 
 @app.get("/api/electorates/geojson")
